@@ -20,6 +20,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -358,6 +359,22 @@ export default function App() {
     setTab("Messages");
   };
 
+  const markAsSold = async (listing: Listing) => {
+    if (db) {
+      await updateDoc(doc(db, "listings", listing.id), {
+        status: "sold",
+      });
+    } else {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === listing.id ? { ...i, status: "sold" } : i,
+        ),
+      );
+    }
+
+    setSelected(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
@@ -463,6 +480,7 @@ export default function App() {
           setSelected(null)
         }
         onContact={contactSeller}
+        onMarkAsSold={markAsSold}
       />
 
       <AuthModal
@@ -596,11 +614,13 @@ function ListingModal({
   user,
   onClose,
   onContact,
+  onMarkAsSold,
 }: {
   item: Listing | null;
   user: User | null;
   onClose: () => void;
   onContact: () => void;
+  onMarkAsSold: (item: Listing) => void;
 }) {
   return (
     <Modal
@@ -675,6 +695,17 @@ function ListingModal({
                     : "Sign in to contact seller"}
                 </Text>
               </Pressable>
+
+              {user && item.sellerId === user.uid && item.status !== "sold" ? (
+                <Pressable
+                  style={styles.outline}
+                  onPress={() => onMarkAsSold(item)}
+                >
+                  <Text style={styles.outlineText}>
+                    Mark as sold
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </View>
