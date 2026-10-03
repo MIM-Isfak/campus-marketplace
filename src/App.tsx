@@ -35,6 +35,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+
 import { EmptyState } from "./components/EmptyState";
 import { ExplorePage } from "./pages/ExplorePage";
 import { MessagesPage } from "./pages/MessagesPage";
@@ -53,7 +54,9 @@ async function registerUser(user: User) {
     {
       uid: user.uid,
       displayName:
-        user.displayName || user.email?.split("@")[0] || "Campus student",
+        user.displayName ||
+        user.email?.split("@")[0] ||
+        "Campus student",
       email: user.email || "",
       photoURL: user.photoURL || null,
       campus: "North Campus",
@@ -70,26 +73,38 @@ export default function App() {
 
   const [queryText, setQueryText] = useState("");
 
-  const [category, setCategory] = useState("All items");
+  const [category, setCategory] =
+    useState("All items");
 
   // PRICE FILTER
-  const [priceFilter, setPriceFilter] = useState("All prices");
+  const [priceFilter, setPriceFilter] =
+    useState("All prices");
 
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  // PRICE SORT
+  const [priceSort, setPriceSort] =
+    useState("Default");
 
-  const [selected, setSelected] = useState<Listing | null>(null);
+  const [savedIds, setSavedIds] =
+    useState<string[]>([]);
+
+  const [selected, setSelected] =
+    useState<Listing | null>(null);
 
   const [user, setUser] = useState<User | null>(
     auth?.currentUser || null,
   );
 
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] =
+    useState(false);
 
-  const [sellOpen, setSellOpen] = useState(false);
+  const [sellOpen, setSellOpen] =
+    useState(false);
 
-  const [authError, setAuthError] = useState("");
+  const [authError, setAuthError] =
+    useState("");
 
-  const [profileReady, setProfileReady] = useState(false);
+  const [profileReady, setProfileReady] =
+    useState(false);
 
   useEffect(() => {
     const firebaseAuth = auth;
@@ -116,11 +131,20 @@ export default function App() {
 
     let unsubscribe: () => void = () => undefined;
 
-    setPersistence(firebaseAuth, browserLocalPersistence)
+    setPersistence(
+      firebaseAuth,
+      browserLocalPersistence,
+    )
       .then(() => {
-        unsubscribe = onAuthStateChanged(firebaseAuth, handleUser);
+        unsubscribe =
+          onAuthStateChanged(
+            firebaseAuth,
+            handleUser,
+          );
 
-        return getRedirectResult(firebaseAuth);
+        return getRedirectResult(
+          firebaseAuth,
+        );
       })
       .then((result) => {
         if (result?.user) {
@@ -154,48 +178,76 @@ export default function App() {
             ? seedListings
             : snapshot.docs.map(
                 (entry) =>
-                  ({ id: entry.id, ...entry.data() }) as Listing,
+                  ({
+                    id: entry.id,
+                    ...entry.data(),
+                  }) as Listing,
               ),
         ),
       () => setItems(seedListings),
     );
   }, []);
 
-  // SEARCH + CATEGORY + PRICE FILTER
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) => {
-        const matchesCategory =
-          category === "All items" ||
-          item.category === category;
+  // SEARCH + CATEGORY + PRICE FILTER + PRICE SORT
+  const filteredItems = useMemo(() => {
+    const filtered = items.filter((item) => {
+      const matchesCategory =
+        category === "All items" ||
+        item.category === category;
 
-        const matchesSearch = item.title
-          .toLowerCase()
-          .includes(queryText.toLowerCase());
-
-        const matchesPrice =
-          priceFilter === "All prices" ||
-          (priceFilter === "Under $50" &&
-            item.price < 50) ||
-          (priceFilter === "$50 - $100" &&
-            item.price >= 50 &&
-            item.price <= 100) ||
-          (priceFilter === "$100+" &&
-            item.price > 100);
-
-        return (
-          matchesCategory &&
-          matchesSearch &&
-          matchesPrice
+      const matchesSearch = item.title
+        .toLowerCase()
+        .includes(
+          queryText.toLowerCase(),
         );
-      }),
-    [category, items, priceFilter, queryText],
-  );
+
+      const matchesPrice =
+        priceFilter === "All prices" ||
+        (priceFilter === "Under $50" &&
+          item.price < 50) ||
+        (priceFilter === "$50 - $100" &&
+          item.price >= 50 &&
+          item.price <= 100) ||
+        (priceFilter === "$100+" &&
+          item.price > 100);
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesPrice
+      );
+    });
+
+    // LOW TO HIGH
+    if (priceSort === "Price: Low to High") {
+      return [...filtered].sort(
+        (a, b) => a.price - b.price,
+      );
+    }
+
+    // HIGH TO LOW
+    if (priceSort === "Price: High to Low") {
+      return [...filtered].sort(
+        (a, b) => b.price - a.price,
+      );
+    }
+
+    return filtered;
+  }, [
+    category,
+    items,
+    priceFilter,
+    priceSort,
+    queryText,
+  ]);
 
   const myListings = useMemo(
     () =>
       user
-        ? items.filter((item) => item.sellerId === user.uid)
+        ? items.filter(
+            (item) =>
+              item.sellerId === user.uid,
+          )
         : [],
     [items, user],
   );
@@ -203,7 +255,9 @@ export default function App() {
   const toggleSaved = (id: string) =>
     setSavedIds((current) =>
       current.includes(id)
-        ? current.filter((value) => value !== id)
+        ? current.filter(
+            (value) => value !== id,
+          )
         : [...current, id],
     );
 
@@ -219,10 +273,11 @@ export default function App() {
       );
 
       if (Platform.OS === "web") {
-        const result = await signInWithPopup(
-          auth,
-          new GoogleAuthProvider(),
-        );
+        const result =
+          await signInWithPopup(
+            auth,
+            new GoogleAuthProvider(),
+          );
 
         await registerUser(result.user);
 
@@ -241,7 +296,9 @@ export default function App() {
 
       if (
         Platform.OS === "web" &&
-        /popup|cancelled-popup-request/i.test(code)
+        /popup|cancelled-popup-request/i.test(
+          code,
+        )
       ) {
         await signInWithRedirect(
           auth,
@@ -314,16 +371,26 @@ export default function App() {
           // PRICE FILTER
           priceFilter={priceFilter}
 
+          // PRICE SORT
+          priceSort={priceSort}
+
           savedIds={savedIds}
           onQueryChange={setQueryText}
           onCategoryChange={setCategory}
 
           // PRICE FILTER
-          onPriceFilterChange={setPriceFilter}
+          onPriceFilterChange={
+            setPriceFilter
+          }
+
+          // PRICE SORT
+          onPriceSortChange={setPriceSort}
 
           onSave={toggleSaved}
           onOpen={setSelected}
-          onProfile={() => setTab("Profile")}
+          onProfile={() =>
+            setTab("Profile")
+          }
         />
       )}
 
@@ -339,7 +406,9 @@ export default function App() {
 
       {tab === "Messages" && (
         <MessagesPage
-          onBrowse={() => setTab("Explore")}
+          onBrowse={() =>
+            setTab("Explore")
+          }
         />
       )}
 
@@ -347,7 +416,9 @@ export default function App() {
         <MyListingsPage
           items={myListings}
           onOpen={setSelected}
-          onSell={() => setSellOpen(true)}
+          onSell={() =>
+            setSellOpen(true)
+          }
         />
       )}
 
@@ -356,7 +427,9 @@ export default function App() {
           user={user}
           savedCount={savedIds.length}
           listingCount={myListings.length}
-          firebaseConfigured={firebaseConfigured}
+          firebaseConfigured={
+            firebaseConfigured
+          }
           profileReady={profileReady}
           error={authError}
           onMyListings={() =>
@@ -365,7 +438,9 @@ export default function App() {
               : setAuthOpen(true)
           }
           onSaved={() => setTab("Saved")}
-          onSignIn={() => setAuthOpen(true)}
+          onSignIn={() =>
+            setAuthOpen(true)
+          }
           onSignOut={() =>
             auth && signOut(auth)
           }
@@ -376,26 +451,34 @@ export default function App() {
         tab={tab}
         savedCount={savedIds.length}
         onChange={setTab}
-        onSell={() => setSellOpen(true)}
+        onSell={() =>
+          setSellOpen(true)
+        }
       />
 
       <ListingModal
         item={selected}
         user={user}
-        onClose={() => setSelected(null)}
+        onClose={() =>
+          setSelected(null)
+        }
         onContact={contactSeller}
       />
 
       <AuthModal
         visible={authOpen}
-        onClose={() => setAuthOpen(false)}
+        onClose={() =>
+          setAuthOpen(false)
+        }
         onSignIn={signInWithGoogle}
         error={authError}
       />
 
       <SellModal
         visible={sellOpen}
-        onClose={() => setSellOpen(false)}
+        onClose={() =>
+          setSellOpen(false)
+        }
         onSubmit={publish}
       />
     </SafeAreaView>
@@ -419,7 +502,9 @@ function BottomNav({
         label="Explore"
         icon="⌂"
         active={tab === "Explore"}
-        onPress={() => onChange("Explore")}
+        onPress={() =>
+          onChange("Explore")
+        }
       />
 
       <NavItem
@@ -427,22 +512,31 @@ function BottomNav({
         icon="♡"
         active={tab === "Saved"}
         badge={savedCount}
-        onPress={() => onChange("Saved")}
+        onPress={() =>
+          onChange("Saved")
+        }
       />
 
       <NavItem
         label="Messages"
         icon="□"
         active={tab === "Messages"}
-        onPress={() => onChange("Messages")}
+        onPress={() =>
+          onChange("Messages")
+        }
       />
 
       <Pressable
         style={styles.sellButton}
         onPress={onSell}
       >
-        <Text style={styles.sellPlus}>＋</Text>
-        <Text style={styles.sellText}>Sell</Text>
+        <Text style={styles.sellPlus}>
+          ＋
+        </Text>
+
+        <Text style={styles.sellText}>
+          Sell
+        </Text>
       </Pressable>
     </View>
   );
@@ -519,7 +613,9 @@ function ListingModal({
         <View style={styles.backdrop}>
           <View style={styles.detail}>
             <Image
-              source={{ uri: item.image }}
+              source={{
+                uri: item.image,
+              }}
               style={styles.detailImage}
             />
 
@@ -527,30 +623,43 @@ function ListingModal({
               style={styles.close}
               onPress={onClose}
             >
-              <Text style={styles.closeText}>
+              <Text
+                style={styles.closeText}
+              >
                 ×
               </Text>
             </Pressable>
 
-            <View style={styles.detailBody}>
-              <Text style={styles.detailCategory}>
+            <View
+              style={styles.detailBody}
+            >
+              <Text
+                style={styles.detailCategory}
+              >
                 {item.category.toUpperCase()}
               </Text>
 
-              <Text style={styles.detailTitle}>
+              <Text
+                style={styles.detailTitle}
+              >
                 {item.title}
               </Text>
 
-              <Text style={styles.detailPrice}>
+              <Text
+                style={styles.detailPrice}
+              >
                 ${item.price}
               </Text>
 
               <Text style={styles.muted}>
-                {item.condition} · {item.campus} ·{" "}
+                {item.condition} ·{" "}
+                {item.campus} ·{" "}
                 {item.seller}
               </Text>
 
-              <Text style={styles.description}>
+              <Text
+                style={styles.description}
+              >
                 {item.description}
               </Text>
 
@@ -558,7 +667,9 @@ function ListingModal({
                 style={styles.primary}
                 onPress={onContact}
               >
-                <Text style={styles.primaryText}>
+                <Text
+                  style={styles.primaryText}
+                >
                   {user
                     ? `Message ${item.seller}`
                     : "Sign in to contact seller"}
@@ -595,13 +706,18 @@ function AuthModal({
             Welcome to campus marketplace
           </Text>
 
-          <Text style={styles.authMessage}>
+          <Text
+            style={styles.authMessage}
+          >
             Sign in to save listings, message
-            sellers, and publish your own items.
+            sellers, and publish your own
+            items.
           </Text>
 
           {error ? (
-            <Text style={styles.authError}>
+            <Text
+              style={styles.authError}
+            >
               {error}
             </Text>
           ) : null}
@@ -610,11 +726,15 @@ function AuthModal({
             style={styles.googleButton}
             onPress={onSignIn}
           >
-            <Text style={styles.googleMark}>
+            <Text
+              style={styles.googleMark}
+            >
               G
             </Text>
 
-            <Text style={styles.outlineText}>
+            <Text
+              style={styles.outlineText}
+            >
               Continue with Google
             </Text>
           </Pressable>
@@ -623,7 +743,9 @@ function AuthModal({
             style={styles.outline}
             onPress={onClose}
           >
-            <Text style={styles.outlineText}>
+            <Text
+              style={styles.outlineText}
+            >
               Maybe later
             </Text>
           </Pressable>
@@ -646,8 +768,12 @@ function SellModal({
     category: string,
   ) => Promise<void>;
 }) {
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
+  const [title, setTitle] =
+    useState("");
+
+  const [price, setPrice] =
+    useState("");
+
   const [category, setCategory] =
     useState("Textbooks");
 
@@ -659,13 +785,19 @@ function SellModal({
     >
       <View style={styles.backdrop}>
         <View style={styles.form}>
-          <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>
+          <View
+            style={styles.formHeader}
+          >
+            <Text
+              style={styles.formTitle}
+            >
               Sell an item
             </Text>
 
             <Pressable onPress={onClose}>
-              <Text style={styles.closeText}>
+              <Text
+                style={styles.closeText}
+              >
                 ×
               </Text>
             </Pressable>
@@ -709,7 +841,9 @@ function SellModal({
               )
             }
           >
-            <Text style={styles.primaryText}>
+            <Text
+              style={styles.primaryText}
+            >
               Publish listing
             </Text>
           </Pressable>
@@ -799,7 +933,8 @@ const styles = StyleSheet.create({
 
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15,40,33,.45)",
+    backgroundColor:
+      "rgba(15,40,33,.45)",
     justifyContent: "flex-end",
   },
 

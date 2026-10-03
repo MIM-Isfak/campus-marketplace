@@ -17,10 +17,12 @@ export function ExplorePage({
   query,
   category,
   priceFilter,
+  priceSort,
   savedIds,
   onQueryChange,
   onCategoryChange,
   onPriceFilterChange,
+  onPriceSortChange,
   onSave,
   onOpen,
   onProfile,
@@ -33,13 +35,25 @@ export function ExplorePage({
 
   priceFilter: string;
 
+  priceSort: string;
+
   savedIds: string[];
 
-  onQueryChange: (value: string) => void;
+  onQueryChange: (
+    value: string,
+  ) => void;
 
-  onCategoryChange: (value: string) => void;
+  onCategoryChange: (
+    value: string,
+  ) => void;
 
-  onPriceFilterChange: (value: string) => void;
+  onPriceFilterChange: (
+    value: string,
+  ) => void;
+
+  onPriceSortChange: (
+    value: string,
+  ) => void;
 
   onSave: (id: string) => void;
 
@@ -49,7 +63,9 @@ export function ExplorePage({
 }) {
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={
+        styles.content
+      }
     >
       {/* HEADER */}
 
@@ -91,11 +107,13 @@ export function ExplorePage({
         />
       </View>
 
-      {/* SECTION TITLE */}
+      {/* SECTION */}
 
       <View style={styles.section}>
         <View>
-          <Text style={styles.sectionTitle}>
+          <Text
+            style={styles.sectionTitle}
+          >
             Browse near you
           </Text>
 
@@ -109,12 +127,16 @@ export function ExplorePage({
         </Text>
       </View>
 
-      {/* CATEGORY FILTER */}
+      {/* CATEGORY */}
 
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categories}
+        showsHorizontalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.categories
+        }
       >
         {categories.map((value) => (
           <Pressable
@@ -149,7 +171,9 @@ export function ExplorePage({
 
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator={
+          false
+        }
         contentContainerStyle={
           styles.priceCategories
         }
@@ -184,15 +208,65 @@ export function ExplorePage({
         ))}
       </ScrollView>
 
-      {/* PRODUCT LIST */}
+      {/* PRICE SORT */}
+
+      <Text style={styles.filterTitle}>
+        Sort by price
+      </Text>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.priceCategories
+        }
+      >
+        {[
+          "Default",
+          "Price: Low to High",
+          "Price: High to Low",
+        ].map((value) => (
+          <Pressable
+            key={value}
+            onPress={() =>
+              onPriceSortChange(value)
+            }
+            style={[
+              styles.priceFilter,
+              priceSort === value &&
+                styles.activePriceFilter,
+            ]}
+          >
+            <Text
+              style={[
+                styles.categoryText,
+                priceSort === value &&
+                  styles.activeText,
+              ]}
+            >
+              {value}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* PRODUCTS */}
 
       <FlatList
         data={items}
         scrollEnabled={false}
         numColumns={2}
-        keyExtractor={(item) => item.id}
-        columnWrapperStyle={styles.columns}
-        contentContainerStyle={styles.grid}
+        keyExtractor={(item) =>
+          item.id
+        }
+        columnWrapperStyle={
+          styles.columns
+        }
+        contentContainerStyle={
+          styles.grid
+        }
         ListEmptyComponent={
           <Text style={styles.empty}>
             No items match your search yet.
@@ -201,7 +275,9 @@ export function ExplorePage({
         renderItem={({ item }) => (
           <ListingCard
             item={item}
-            saved={savedIds.includes(item.id)}
+            saved={savedIds.includes(
+              item.id,
+            )}
             onSave={() =>
               onSave(item.id)
             }
@@ -306,8 +382,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  /* CATEGORY */
-
   categories: {
     gap: 8,
     paddingBottom: 18,
@@ -335,8 +409,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
 
-  /* PRICE FILTER */
-
   filterTitle: {
     color: "#173C34",
     fontSize: 14,
@@ -347,7 +419,7 @@ const styles = StyleSheet.create({
 
   priceCategories: {
     gap: 8,
-    paddingBottom: 22,
+    paddingBottom: 18,
   },
 
   priceFilter: {
@@ -364,8 +436,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#1F5D4C",
     borderColor: "#1F5D4C",
   },
-
-  /* PRODUCTS */
 
   grid: {
     gap: 14,
