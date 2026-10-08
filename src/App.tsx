@@ -322,31 +322,41 @@ export default function App() {
     title: string,
     price: string,
     listingCategory: string,
-  ) => {
+    description: string,
+    condition: string,
+  ): Promise<string | null> => {
     if (!user) {
       setSellOpen(false);
       setAuthOpen(true);
-      return;
+      return null;
     }
 
-    await addDoc(collection(db!, "listings"), {
-      title,
-      price: Number(price),
-      category: listingCategory,
-      seller:
-        user.displayName ||
-        user.email ||
-        "You",
-      sellerId: user.uid,
-      campus: "North Campus",
-      condition: "Good condition",
-      image: seedListings[0].image,
-      description:
-        "New listing from a campus seller.",
-      createdAt: serverTimestamp(),
-    });
+    try {
+      await addDoc(collection(db!, "listings"), {
+        title: title.trim(),
+        price: Number(price),
+        category: listingCategory,
+        seller:
+          user.displayName ||
+          user.email ||
+          "You",
+        sellerId: user.uid,
+        campus: "North Campus",
+        condition: condition,
+        image: seedListings[0].image,
+        description: description.trim() || "New listing from a campus seller.",
+        createdAt: serverTimestamp(),
+      });
+    } catch (error) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Could not publish listing. Check your connection.";
+      return msg;
+    }
 
     setSellOpen(false);
+    return null;
   };
 
   const contactSeller = () => {
@@ -497,7 +507,9 @@ export default function App() {
         onClose={() =>
           setSellOpen(false)
         }
-        onSubmit={publish}
+        onSubmit={(title, price, category, description, condition) =>
+          publish(title, price, category, description, condition)
+        }
       />
     </SafeAreaView>
   );
@@ -786,6 +798,11 @@ function AuthModal({
   );
 }
 
+const sellCategories = ["Textbooks", "Furniture", "Tech", "Fashion"];
+const sellConditions = ["New", "Like New", "Good", "Fair", "Poor"];
+const TITLE_MAX = 50;
+const DESC_MAX = 200;
+
 function SellModal({
   visible,
   onClose,
@@ -797,16 +814,71 @@ function SellModal({
     title: string,
     price: string,
     category: string,
-  ) => Promise<void>;
+    description: string,
+    condition: string,
+  ) => Promise<string | null>;
 }) {
-  const [title, setTitle] =
-    useState("");
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Textbooks");
+  const [condition, setCondition] = useState("Good");
+  const [sellError, setSellError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const [price, setPrice] =
-    useState("");
+  // Reset form every time modal opens fresh
+  useEffect(() => {
+    if (visible) {
+      setTitle("");
+      setPrice("");
+      setDescription("");
+      setCategory("Textbooks");
+      setCondition("Good");
+      setSellError("");
+      setLoading(false);
+      setSuccess(false);
+    }
+  }, [visible]);
 
-  const [category, setCategory] =
-    useState("Textbooks");
+  const validate = (): string => {
+    if (title.trim().length < 3) {
+      return "Title must be at least 3 characters.";
+    }
+    const priceNum = Number(price);
+    if (!price.trim() || isNaN(priceNum) || priceNum <= 0) {
+      return "Price must be a number greater than 0.";
+    }
+    return "";
+  };
+
+  const handlePublish = async () => {
+    const validationError = validate();
+    if (validationError) {
+      setSellError(validationError);
+      return;
+    }
+    setSellError("");
+    setLoading(true);
+    const serverError = await onSubmit(
+      title.trim(), price, category, description, condition,
+    );
+    setLoading(false);
+    if (serverError) {
+      setSellError(serverError);
+    } else {
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1800);
+    }
+  };
+
+  const handleClose = () => {
+    setSellError("");
+    onClose();
+  };
 
   return (
     <Modal
@@ -815,70 +887,135 @@ function SellModal({
       animationType="slide"
     >
       <View style={styles.backdrop}>
-        <View style={styles.form}>
-          <View
-            style={styles.formHeader}
-          >
-            <Text
-              style={styles.formTitle}
-            >
+        <ScrollView
+          style={styles.formScroll}
+          contentContainerStyle={styles.form}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formHeader}>
+            <Text style={styles.formTitle}>
               Sell an item
             </Text>
-
-            <Pressable onPress={onClose}>
-              <Text
-                style={styles.closeText}
-              >
-                ×
-              </Text>
+            <Pressable onPress={handleClose}>
+              <Text style={styles.closeText}>×</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.label}>
-            What are you selling?
-          </Text>
+          {/* ✅ SUCCESS */}
+          {success ? (
+            <View style={styles.successBox}>
+              <Text style={styles.successText}>
+                🎉 Listing published successfully!
+              </Text>
+            </View>
+          ) : null}
 
+          {/* ❌ ERROR */}
+          {sellError ? (
+            <Text style={styles.authError}>
+              {sellError}
+            </Text>
+          ) : null}
+
+          {/* TITLE */}
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>What are you selling? <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.charCount}>{title.length}/{TITLE_MAX}</Text>
+          </View>
           <TextInput
             value={title}
-            onChangeText={setTitle}
+            onChangeText={(text) => {
+              if (text.length <= TITLE_MAX) { setTitle(text); setSellError(""); }
+            }}
             placeholder="e.g. Organic Chemistry textbook"
             style={styles.field}
+            editable={!loading}
+            maxLength={TITLE_MAX}
           />
 
-          <Text style={styles.label}>
-            Price
-          </Text>
-
+          {/* PRICE */}
+          <Text style={styles.label}>Price ($) <Text style={styles.required}>*</Text></Text>
           <TextInput
             value={price}
-            onChangeText={setPrice}
+            onChangeText={(text) => { setPrice(text); setSellError(""); }}
             keyboardType="numeric"
-            placeholder="$ 0"
+            placeholder="e.g. 25"
             style={styles.field}
+            editable={!loading}
+          />
+
+          {/* CATEGORY */}
+          <Text style={styles.label}>Category <Text style={styles.required}>*</Text></Text>
+          <View style={styles.categoryRow}>
+            {sellCategories.map((cat) => (
+              <Pressable
+                key={cat}
+                onPress={() => setCategory(cat)}
+                style={[
+                  styles.categoryChip,
+                  category === cat && styles.categoryChipActive,
+                ]}
+              >
+                <Text style={[
+                  styles.categoryChipText,
+                  category === cat && styles.categoryChipTextActive,
+                ]}>
+                  {cat}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* CONDITION */}
+          <Text style={styles.label}>Condition <Text style={styles.required}>*</Text></Text>
+          <View style={styles.categoryRow}>
+            {sellConditions.map((cond) => (
+              <Pressable
+                key={cond}
+                onPress={() => setCondition(cond)}
+                style={[
+                  styles.categoryChip,
+                  condition === cond && styles.categoryChipActive,
+                ]}
+              >
+                <Text style={[
+                  styles.categoryChipText,
+                  condition === cond && styles.categoryChipTextActive,
+                ]}>
+                  {cond}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* DESCRIPTION */}
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Description</Text>
+            <Text style={styles.charCount}>{description.length}/{DESC_MAX}</Text>
+          </View>
+          <TextInput
+            value={description}
+            onChangeText={(text) => {
+              if (text.length <= DESC_MAX) setDescription(text);
+            }}
+            placeholder="Describe your item — condition details, what’s included, why you’re selling..."
+            style={[styles.field, styles.descriptionField]}
+            multiline
+            numberOfLines={3}
+            editable={!loading}
+            maxLength={DESC_MAX}
           />
 
           <Pressable
-            disabled={!title || !price}
-            style={[
-              styles.primary,
-              (!title || !price) &&
-                styles.disabled,
-            ]}
-            onPress={() =>
-              onSubmit(
-                title,
-                price,
-                category,
-              )
-            }
+            style={[styles.primary, loading && styles.disabled]}
+            onPress={handlePublish}
+            disabled={loading}
           >
-            <Text
-              style={styles.primaryText}
-            >
-              Publish listing
+            <Text style={styles.primaryText}>
+              {loading ? "Publishing..." : "Publish listing"}
             </Text>
           </Pressable>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -1057,10 +1194,8 @@ const styles = StyleSheet.create({
   },
 
   form: {
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     padding: 24,
+    paddingBottom: 40,
   },
 
   formHeader: {
@@ -1131,6 +1266,30 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
 
+  labelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 18,
+    marginBottom: 7,
+  },
+
+  required: {
+    color: "#C3535B",
+  },
+
+  charCount: {
+    color: "#83918A",
+    fontSize: 11,
+  },
+
+  formScroll: {
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "90%",
+  },
+
   field: {
     height: 50,
     borderWidth: 1,
@@ -1142,5 +1301,56 @@ const styles = StyleSheet.create({
 
   disabled: {
     opacity: 0.45,
+  },
+
+  categoryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#BCD0C3",
+    backgroundColor: "#F4F9F6",
+  },
+
+  categoryChipActive: {
+    backgroundColor: "#1F5D4C",
+    borderColor: "#1F5D4C",
+  },
+
+  categoryChipText: {
+    color: "#365B4C",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  categoryChipTextActive: {
+    color: "#FFF",
+  },
+
+  successBox: {
+    backgroundColor: "#E6F4ED",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 14,
+    alignItems: "center",
+  },
+
+  successText: {
+    color: "#1F5D4C",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  descriptionField: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: "top",
   },
 });
