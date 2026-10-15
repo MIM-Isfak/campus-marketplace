@@ -1,5 +1,28 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { Listing } from "../types";
+
+export function SoldBadge({
+  style,
+  textStyle,
+}: {
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+} = {}) {
+  return (
+    <View style={[styles.soldBadge, style]}>
+      <Text style={[styles.soldText, textStyle]}>SOLD</Text>
+    </View>
+  );
+}
 
 export function ListingCard({
   item,
@@ -12,11 +35,19 @@ export function ListingCard({
   onSave: () => void;
   onOpen: () => void;
 }) {
+  const isSold = item.status === "sold";
+
   return (
-    <Pressable style={styles.card} onPress={onOpen}>
+    <Pressable
+      style={[styles.card, isSold && styles.soldCard]}
+      onPress={onOpen}
+    >
       {/* IMAGE + OVERLAYS */}
       <View style={styles.photo}>
         <Image source={{ uri: item.image }} style={styles.image} />
+
+        {/* SOLD badge — top left of image */}
+        {isSold && <SoldBadge />}
 
         {/* Price badge — bottom left of image */}
         <View style={styles.priceBadge}>
@@ -57,6 +88,26 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#E9ECE6",
+  },
+
+  soldCard: {
+    opacity: 0.6,
+  },
+
+  soldBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "#C3535B",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+
+  soldText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "800",
   },
 
   photo: {
