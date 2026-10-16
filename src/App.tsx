@@ -44,7 +44,7 @@ import { MessagesPage } from "./pages/MessagesPage";
 import { MyListingsPage } from "./pages/MyListingsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { SavedPage } from "./pages/SavedPage";
-import { seedListings } from "./data";
+import { categoryImages, seedListings } from "./data";
 import { auth, db, firebaseConfigured } from "./firebase";
 import { Listing, Tab } from "./types";
 
@@ -322,7 +322,7 @@ export default function App() {
   const publish = async (
     title: string,
     price: string,
-    listingCategory: string,
+    category: string,
     description: string,
     condition: string,
   ): Promise<string | null> => {
@@ -336,7 +336,7 @@ export default function App() {
       await addDoc(collection(db!, "listings"), {
         title: title.trim(),
         price: Number(price),
-        category: listingCategory,
+        category: category,
         seller:
           user.displayName ||
           user.email ||
@@ -344,7 +344,7 @@ export default function App() {
         sellerId: user.uid,
         campus: "North Campus",
         condition: condition,
-        image: seedListings[0].image,
+        image: categoryImages[category] || seedListings[0].image,
         description: description.trim() || "New listing from a campus seller.",
         createdAt: serverTimestamp(),
       });

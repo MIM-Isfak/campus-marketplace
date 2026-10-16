@@ -8,6 +8,13 @@ export const categories = [
   "Fashion",
 ];
 
+export const categoryImages: Record<string, string> = {
+  Textbooks: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800",
+  Furniture: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800",
+  Tech: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800",
+  Fashion: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=800",
+};
+
 export const seedListings: Listing[] = [
   {
     id: "1",
