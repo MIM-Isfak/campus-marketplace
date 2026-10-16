@@ -38,6 +38,7 @@ import {
 } from "react-native";
 
 import { EmptyState } from "./components/EmptyState";
+import { SoldBadge } from "./components/ListingCard";
 import { ExplorePage } from "./pages/ExplorePage";
 import { MessagesPage } from "./pages/MessagesPage";
 import { MyListingsPage } from "./pages/MyListingsPage";
@@ -651,6 +652,10 @@ function ListingModal({
               style={styles.detailImage}
             />
 
+            {item.status === "sold" && (
+              <SoldBadge style={styles.modalSoldBadge} />
+            )}
+
             <Pressable
               style={styles.close}
               onPress={onClose}
@@ -1116,6 +1121,11 @@ const styles = StyleSheet.create({
   detailImage: {
     width: "100%",
     height: 230,
+  },
+
+  modalSoldBadge: {
+    top: 14,
+    left: 14,
   },
 
   close: {
