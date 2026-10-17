@@ -19,10 +19,9 @@ College and university students frequently buy and sell textbooks, electronics, 
 
 ## Features Implemented by Our Group
 1. **Price Filter and Sort on Explore Page**: Allows users to filter listings by price range (Under $50, $50 - $100, $100+) and sort items by price (Low to High, High to Low).
-2. **Mark as Sold for Sellers**: Adds an optional `status` field (`active` | `sold`) to listings, allowing sellers to mark their own listings as sold from the listing details modal.
-3. **Sell Form Validation with Category and Condition Pickers**: Form validation and dedicated selectors for category and condition when creating a new listing.
+2. **Mark as Sold with SOLD Badge**: Sellers can mark their own listings as sold from the listing details modal (using an optional status field, active or sold, stored in Firestore), and sold listings show a SOLD badge on the Explore cards, the My Listings cards and the listing details modal, and sold cards are dimmed.
+3. **Sell Form Validation with Category and Condition Pickers**: Form validation and dedicated selectors for category and condition when creating a new listing, and new listings get a category-specific image (Textbooks, Furniture, Tech, Fashion).
 4. **My Listings Dashboard**: Seller dashboard showing listing metrics (total, active, and sold counts), with the ability to edit listings and delete them with in-app confirmation.
-5. **SOLD Badge on Listing Cards**: The SOLD badge currently appears on the listing cards in the My Listings page, and Explore page support is being added.
 
 ---
 
